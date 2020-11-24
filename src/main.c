@@ -79,7 +79,7 @@ int main(void)
 
 	//3. Create 2 tasks
 	xTaskCreate(LED_TASK_handler,"LED-TASK",configMINIMAL_STACK_SIZE,NULL,1,NULL);
-	xTaskCreate(BUTTON_TASK_handler,"BUTTON-TASK",configMINIMAL_STACK_SIZE,NULL,2,NULL);
+	xTaskCreate(BUTTON_TASK_handler,"BUTTON-TASK",configMINIMAL_STACK_SIZE,NULL,1,NULL);
 
 	//4. Start the scheduler
 	vTaskStartScheduler();
@@ -93,21 +93,23 @@ void LED_TASK_handler(void *params) //LED management task
 {
 	while(1)
 	{
+		printmsg("\n\nLED Task");
 		if(button_status_flag == PRESSED)
 		{
 			GPIO_WriteBit(GPIOF,GPIO_PinSource9,Bit_SET);
-			printmsg("Pressed");
+			printmsg(" - Pressed");
 		}
 		else
 		{
 			GPIO_WriteBit(GPIOF,GPIO_PinSource9,Bit_RESET);
-			printmsg("Not Pressed");
+			printmsg(" - Not Pressed");
 		}
 	}
 }
 
 void BUTTON_TASK_handler(void *params) //Button pooling task
 {
+	printmsg("\n\nButton Task");
 	while(1)
 	{
 		//If button Key0 is pressed, the pin is grounded, so equals 0
