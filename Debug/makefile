@@ -34,13 +34,13 @@ endif
 # Add inputs and outputs from these tool invocations to the build variables 
 
 # All Target
-all: STM32_HelloWorld.elf
+all: STM32_LedAndButton.elf
 
 # Tool invocations
-STM32_HelloWorld.elf: $(OBJS) $(USER_OBJS) C:\Ac6\RTOS_Workspace\STM32_HelloWorld/LinkerScript.ld
+STM32_LedAndButton.elf: $(OBJS) $(USER_OBJS) C:\Ac6\RTOS_Workspace\STM32_LedAndButton/LinkerScript.ld
 	@echo 'Building target: $@'
 	@echo 'Invoking: MCU GCC Linker'
-	arm-none-eabi-gcc -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -specs=rdimon.specs -lc -lrdimon -T"C:/Ac6/RTOS_Workspace/STM32_HelloWorld/LinkerScript.ld" -Wl,-Map=output.map -Wl,--gc-sections -o "STM32_HelloWorld.elf" @"objects.list" $(USER_OBJS) $(LIBS) -lm
+	arm-none-eabi-gcc -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -specs=rdimon.specs -lc -lrdimon -T"C:/Ac6/RTOS_Workspace/STM32_LedAndButton/LinkerScript.ld" -Wl,-Map=output.map -Wl,--gc-sections -o "STM32_LedAndButton.elf" @"objects.list" $(USER_OBJS) $(LIBS) -lm
 	@echo 'Finished building target: $@'
 	@echo ' '
 	$(MAKE) --no-print-directory post-build
@@ -52,8 +52,8 @@ clean:
 
 post-build:
 	-@echo 'Generating binary and Printing size information:'
-	arm-none-eabi-objcopy -O binary "STM32_HelloWorld.elf" "STM32_HelloWorld.bin"
-	arm-none-eabi-size "STM32_HelloWorld.elf"
+	arm-none-eabi-objcopy -O binary "STM32_LedAndButton.elf" "STM32_LedAndButton.bin"
+	arm-none-eabi-size "STM32_LedAndButton.elf"
 	-@echo ' '
 
 .PHONY: all clean dependents

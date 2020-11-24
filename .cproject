@@ -98,6 +98,20 @@
 							</tool>
 						</toolChain>
 					</folderInfo>
+					<folderInfo id="fr.ac6.managedbuild.config.gnu.cross.exe.debug.942935935.1387432487" name="/" resourcePath="Third-Party/FreeRTOS">
+						<toolChain id="fr.ac6.managedbuild.toolchain.gnu.cross.exe.debug.778542342" name="Ac6 STM32 MCU GCC" superClass="fr.ac6.managedbuild.toolchain.gnu.cross.exe.debug" unusedChildren="">
+							<option id="fr.ac6.managedbuild.option.gnu.cross.mcu.224028105.610045442" name="Mcu" superClass="fr.ac6.managedbuild.option.gnu.cross.mcu.224028105"/>
+							<option id="fr.ac6.managedbuild.option.gnu.cross.fpu.1207782164.1960288536" name="Floating point hardware" superClass="fr.ac6.managedbuild.option.gnu.cross.fpu.1207782164"/>
+							<option id="fr.ac6.managedbuild.option.gnu.cross.floatabi.1644407710.1274481311" name="Floating-point ABI" superClass="fr.ac6.managedbuild.option.gnu.cross.floatabi.1644407710"/>
+							<option id="fr.ac6.managedbuild.option.gnu.cross.board.1681350815.1753818399" name="Board" superClass="fr.ac6.managedbuild.option.gnu.cross.board.1681350815"/>
+							<tool id="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.507234563" name="MCU GCC Compiler" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.824319109"/>
+							<tool id="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.1921358035" name="MCU G++ Compiler" superClass="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.1176030615"/>
+							<tool id="fr.ac6.managedbuild.tool.gnu.cross.c.linker.1716790550" name="MCU GCC Linker" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.linker.609891996"/>
+							<tool id="fr.ac6.managedbuild.tool.gnu.cross.cpp.linker.1559035105" name="MCU G++ Linker" superClass="fr.ac6.managedbuild.tool.gnu.cross.cpp.linker.826316598"/>
+							<tool id="fr.ac6.managedbuild.tool.gnu.archiver.966906982" name="MCU GCC Archiver" superClass="fr.ac6.managedbuild.tool.gnu.archiver.1570948564"/>
+							<tool id="fr.ac6.managedbuild.tool.gnu.cross.assembler.1567783041" name="MCU GCC Assembler" superClass="fr.ac6.managedbuild.tool.gnu.cross.assembler.1002160696"/>
+						</toolChain>
+					</folderInfo>
 					<sourceEntries>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Config"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="StdPeriph_Driver"/>
@@ -209,4 +223,5 @@
 		</configuration>
 	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets"/>
+	<storageModule moduleId="org.eclipse.cdt.internal.ui.text.commentOwnerProjectMappings"/>
 </cproject>

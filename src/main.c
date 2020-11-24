@@ -19,29 +19,35 @@
 // ****** Define macros ******
 #define TRUE 1
 #define FALSE 0
+
 #define AVAILABLE TRUE
 #define NOT_AVAILABLE FALSE
 
+#define NOT_PRESSED FALSE
+#define PRESSED TRUE
+
 // ****** Global declarations ******
 int SysTick_Counter_Interruptions = 0;
-
 TaskHandle_t xTaskHandle1 = NULL;
 TaskHandle_t xTaskHandle2 = NULL;
 char usr_msg[250];
 uint8_t UART_ACCESS_KEY = AVAILABLE;
+uint8_t button_status_flag = NOT_PRESSED;
 
 // ****** Functions prototypes ******
-void vTask1_handler(void *params);
-void vTask2_handler(void *params);
-static void prvSetupUart(void);
+void LED_TASK_handler(void *params);
+void BUTTON_TASK_handler(void *params);
+
 static void prvSetupHardware(void);
+static void prvSetupButton(void);
+static void prvSetupLED(void);
+static void prvSetupUart(void);
 void printmsg(char *msg);
 
 #ifdef USE_SEMIHOSTING
 	//Used for semihosting
 	extern void initialise_monitor_handles();
 #endif
-
 
 // ****** Functions implementation ******
 
@@ -72,8 +78,8 @@ int main(void)
 	printmsg(usr_msg);
 
 	//3. Create 2 tasks
-	xTaskCreate(vTask1_handler,"Task-1",configMINIMAL_STACK_SIZE,NULL,2,&xTaskHandle1);
-	xTaskCreate(vTask2_handler,"Task-2",configMINIMAL_STACK_SIZE,NULL,2,&xTaskHandle2);
+	xTaskCreate(LED_TASK_handler,"LED-TASK",configMINIMAL_STACK_SIZE,NULL,1,NULL);
+	xTaskCreate(BUTTON_TASK_handler,"BUTTON-TASK",configMINIMAL_STACK_SIZE,NULL,2,NULL);
 
 	//4. Start the scheduler
 	vTaskStartScheduler();
@@ -81,55 +87,82 @@ int main(void)
 	for(;;);
 }
 
-void vTask1_handler(void *params)
+//Task Handlers
+
+void LED_TASK_handler(void *params) //LED management task
 {
 	while(1)
 	{
-		if(UART_ACCESS_KEY == AVAILABLE)
+		if(button_status_flag == PRESSED)
 		{
-			UART_ACCESS_KEY = NOT_AVAILABLE;
-
-			char Sys_Str[10];
-			itoa(SysTick_Counter_Interruptions,Sys_Str,10);
-			printmsg(strcat(Sys_Str," - *Task *1* is now running in the MCU\r\n\r\n"));
-
-			SEGGER_SYSVIEW_Print("Task 1 is yielding - Complete");
-			UART_ACCESS_KEY = AVAILABLE;
-			taskYIELD();  // Force task to leave CPU
+			GPIO_WriteBit(GPIOF,GPIO_PinSource9,Bit_SET);
+			printmsg("Pressed");
 		}
 		else
 		{
-			SEGGER_SYSVIEW_Print("Task 1 is yielding - Waiting");
-			taskYIELD();  // Force task to leave CPU
-		}
-
-	}
-}
-
-void vTask2_handler(void *params)
-{
-	while(1)
-	{
-		if(UART_ACCESS_KEY == AVAILABLE)
-		{
-			UART_ACCESS_KEY = NOT_AVAILABLE;
-
-			char Sys_Str[10];
-			itoa(SysTick_Counter_Interruptions,Sys_Str,10);
-			printmsg(strcat(Sys_Str," - *Task *2* is now running in the MCU\r\n\r\n"));
-			SEGGER_SYSVIEW_Print("Task 2 is yielding - Complete");
-
-			UART_ACCESS_KEY = AVAILABLE;
-			taskYIELD();  // Force task to leave CPU
-		}
-		else
-		{
-			SEGGER_SYSVIEW_Print("Task 2 is yielding - Waiting");
-			taskYIELD();  // Force task to leave CPU
+			GPIO_WriteBit(GPIOF,GPIO_PinSource9,Bit_RESET);
+			printmsg("Not Pressed");
 		}
 	}
 }
 
+void BUTTON_TASK_handler(void *params) //Button pooling task
+{
+	while(1)
+	{
+		//If button Key0 is pressed, the pin is grounded, so equals 0
+		button_status_flag = GPIO_ReadInputDataBit(GPIOE,GPIO_Pin_4) == 0 ? PRESSED : NOT_PRESSED;
+	}
+}
+
+// ***** Hardware initialization functions *****
+static void prvSetupHardware(void)
+{
+	prvSetupButton(); //KEY0 Init. from GPIO E
+	prvSetupLED(); //LED0 Init. from GPIO F
+	prvSetupUart(); //UART Init.
+}
+
+// Button related functions
+static void prvSetupButton(void)
+{
+	//RCC AHB1 clock init.
+	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOE, ENABLE);
+	//Define the GPIO struct for configuration
+	GPIO_InitTypeDef gpio_key0_pins;
+
+	//Configure the GPIO behavior
+	gpio_key0_pins.GPIO_Mode = GPIO_Mode_IN;
+	gpio_key0_pins.GPIO_Pin = GPIO_Pin_4;
+	gpio_key0_pins.GPIO_OType = GPIO_OType_PP;
+	gpio_key0_pins.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	gpio_key0_pins.GPIO_Speed = GPIO_Low_Speed;
+
+	//Initiate the GPIO
+	GPIO_Init(GPIOE,&gpio_key0_pins);
+}
+
+// LED Related functions
+static void prvSetupLED(void)
+{
+	//RCC AHB1 clock init.
+	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOF, ENABLE);
+
+	//Define the GPIO struct for configuration
+	GPIO_InitTypeDef gpio_led0_pins;
+
+	//Configure the GPIO behavior
+	gpio_led0_pins.GPIO_Mode = GPIO_Mode_OUT;
+	gpio_led0_pins.GPIO_Pin = GPIO_Pin_9;
+	gpio_led0_pins.GPIO_OType = GPIO_OType_PP;
+	gpio_led0_pins.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	gpio_led0_pins.GPIO_Speed = GPIO_Low_Speed;
+
+	//Initiate the GPIO
+	GPIO_Init(GPIOF,&gpio_led0_pins);
+}
+
+// UART Related functions
 static void prvSetupUart(void)
 {
 	GPIO_InitTypeDef gpio_uart_pins;
@@ -164,11 +197,6 @@ static void prvSetupUart(void)
 
 	//5. Enable UART Periph.
 	USART_Cmd(USART2,ENABLE);
-}
-
-static void prvSetupHardware(void)
-{
-	prvSetupUart(); //UART Init.
 }
 
 void printmsg(char *msg)
