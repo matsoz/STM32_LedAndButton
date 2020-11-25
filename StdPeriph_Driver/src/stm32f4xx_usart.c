@@ -665,7 +665,7 @@ void USART_ReceiverWakeUpCmd(USART_TypeDef* USARTx, FunctionalState NewState)
   *         UART peripheral.
   * @param  USART_WakeUp: specifies the USART wakeup method.
   *          This parameter can be one of the following values:
-  *            @arg USART_WakeUp_IdleLine: WakeUp by an idle line detection
+  *            @arg USART_WakeUp_IdleLine: WakeUp by an idle lin e detection
   *            @arg USART_WakeUp_AddressMark: WakeUp by an address mark
   * @retval None
   */

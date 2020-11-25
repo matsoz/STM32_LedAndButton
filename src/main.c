@@ -11,6 +11,7 @@
 // ****** Includes ******
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 #include "stm32f4xx.h"
 #include "FreeRTOS.h"
@@ -33,6 +34,9 @@ TaskHandle_t xTaskHandle2 = NULL;
 char usr_msg[250];
 uint8_t UART_ACCESS_KEY = AVAILABLE;
 uint8_t button_status_flag = NOT_PRESSED;
+char Sys_Str[10];
+static int pressed_debounce=0;
+uint8_t LedSt = 0;
 
 // ****** Functions prototypes ******
 void LED_TASK_handler(void *params);
@@ -78,8 +82,8 @@ int main(void)
 	printmsg(usr_msg);
 
 	//3. Create 2 tasks
-	xTaskCreate(LED_TASK_handler,"LED-TASK",configMINIMAL_STACK_SIZE,NULL,1,NULL);
-	xTaskCreate(BUTTON_TASK_handler,"BUTTON-TASK",configMINIMAL_STACK_SIZE,NULL,1,NULL);
+	xTaskCreate(LED_TASK_handler,"LED-TASK",configMINIMAL_STACK_SIZE,NULL,2,NULL);
+	xTaskCreate(BUTTON_TASK_handler,"BUTTON-TASK",configMINIMAL_STACK_SIZE,NULL,2,NULL);
 
 	//4. Start the scheduler
 	vTaskStartScheduler();
@@ -93,27 +97,55 @@ void LED_TASK_handler(void *params) //LED management task
 {
 	while(1)
 	{
-		printmsg("\n\nLED Task");
 		if(button_status_flag == PRESSED)
 		{
-			GPIO_WriteBit(GPIOF,GPIO_PinSource9,Bit_SET);
-			printmsg(" - Pressed");
+			GPIO_WriteBit(GPIOF,GPIO_Pin_9,Bit_SET);
+			LedSt = GPIO_ReadOutputDataBit(GPIOF,GPIO_Pin_9);
+			if(LedSt == 1 )
+			{
+				printmsg(strcat("\n\r -> Pressed - LED ONE ",Sys_Str));
+			}
+			else
+			{
+				printmsg(strcat("\n\r -> Pressed - LED ZERO ",Sys_Str));
+			}
 		}
 		else
 		{
-			GPIO_WriteBit(GPIOF,GPIO_PinSource9,Bit_RESET);
-			printmsg(" - Not Pressed");
+			GPIO_WriteBit(GPIOF,GPIO_Pin_9,Bit_RESET);
+			LedSt = GPIO_ReadOutputDataBit(GPIOF,GPIO_Pin_9);
+			if(LedSt == 1 )
+			{
+				printmsg(strcat("\n\r -> Not Pressed - LED ONE ",Sys_Str));
+			}
+			else
+			{
+				printmsg(strcat("\n\r -> Not Pressed - LED ZERO ",Sys_Str));
+			}
 		}
+		LedSt = GPIO_ReadOutputDataBit(GPIOF,GPIO_PinSource9);
+		taskYIELD();
 	}
 }
 
 void BUTTON_TASK_handler(void *params) //Button pooling task
 {
-	printmsg("\n\nButton Task");
 	while(1)
 	{
 		//If button Key0 is pressed, the pin is grounded, so equals 0
-		button_status_flag = GPIO_ReadInputDataBit(GPIOE,GPIO_Pin_4) == 0 ? PRESSED : NOT_PRESSED;
+		if(!GPIO_ReadInputDataBit(GPIOE,GPIO_Pin_4))
+		{
+			if (pressed_debounce < 20) pressed_debounce++;
+			if(pressed_debounce == 20) button_status_flag = PRESSED;
+		}
+		else
+		{
+			if (pressed_debounce > 0) pressed_debounce--;
+			if(pressed_debounce == 0) button_status_flag = NOT_PRESSED;
+		}
+		itoa(pressed_debounce,Sys_Str,10);
+		taskYIELD();
+
 	}
 }
 
@@ -157,8 +189,8 @@ static void prvSetupLED(void)
 	gpio_led0_pins.GPIO_Mode = GPIO_Mode_OUT;
 	gpio_led0_pins.GPIO_Pin = GPIO_Pin_9;
 	gpio_led0_pins.GPIO_OType = GPIO_OType_PP;
-	gpio_led0_pins.GPIO_PuPd = GPIO_PuPd_NOPULL;
-	gpio_led0_pins.GPIO_Speed = GPIO_Low_Speed;
+	gpio_led0_pins.GPIO_PuPd = GPIO_PuPd_DOWN;
+	gpio_led0_pins.GPIO_Speed = GPIO_Speed_100MHz;
 
 	//Initiate the GPIO
 	GPIO_Init(GPIOF,&gpio_led0_pins);
