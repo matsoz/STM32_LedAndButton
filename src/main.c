@@ -40,7 +40,8 @@ uint8_t LedSt = 0;
 
 // ****** Functions prototypes ******
 void LED_TASK_handler(void *params);
-void BUTTON_TASK_handler(void *params);
+void BUTTON_handler(void *params);
+void EXTI4_IRQHandler();
 
 static void prvSetupHardware(void);
 static void prvSetupButton(void);
@@ -129,9 +130,22 @@ void LED_TASK_handler(void *params) //LED management task
 	}
 }
 
-void BUTTON_TASK_handler(void *params) //Button pooling task
+void BUTTON_handler(void *params) //Button pooling task
 {
+	button_status_flag ^= 1;
 
+}
+
+// ***** Interrupt handlers *****
+
+void EXTI4_IRQHandler(void)
+{
+	traceISR_ENTER();
+	//1. Clear the int. pending bit of EXTI line
+	EXTI_ClearITPendingBit(EXTI_Line4);
+
+	BUTTON_handler(NULL);
+	traceISR_EXIT();
 }
 
 // ***** Hardware initialization functions *****
@@ -167,9 +181,9 @@ static void prvSetupButton(void)
 	//1. SYSCFG settings
 
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
-	SYSCFG_EXTILineConfig(GPIOE, EXTI_PinSource4);
+	SYSCFG_EXTILineConfig(EXTI_PortSourceGPIOE, EXTI_PinSource4);
 
-	//2. EXTI line config.
+	//2. EXTI line config -- PE4 to EXTI line 4
 	EXTI_InitTypeDef exti_init;
 
 	exti_init.EXTI_Line = EXTI_Line4;
@@ -251,4 +265,6 @@ void printmsg(char *msg)
 	}
 
 }
+
+
 
