@@ -83,7 +83,8 @@ int main(void)
 
 	//3. Create 2 tasks
 	xTaskCreate(LED_TASK_handler,"LED-TASK",configMINIMAL_STACK_SIZE,NULL,2,NULL);
-	xTaskCreate(BUTTON_TASK_handler,"BUTTON-TASK",configMINIMAL_STACK_SIZE,NULL,2,NULL);
+	//Button task commented - Interruption mode
+	//xTaskCreate(BUTTON_TASK_handler,"BUTTON-TASK",configMINIMAL_STACK_SIZE,NULL,2,NULL);
 
 	//4. Start the scheduler
 	vTaskStartScheduler();
@@ -130,23 +131,7 @@ void LED_TASK_handler(void *params) //LED management task
 
 void BUTTON_TASK_handler(void *params) //Button pooling task
 {
-	while(1)
-	{
-		//If button Key0 is pressed, the pin is grounded, so equals 0
-		if(!GPIO_ReadInputDataBit(GPIOE,GPIO_Pin_4))
-		{
-			if (pressed_debounce < 20) pressed_debounce++;
-			if(pressed_debounce == 20) button_status_flag = PRESSED;
-		}
-		else
-		{
-			if (pressed_debounce > 0) pressed_debounce--;
-			if(pressed_debounce == 0) button_status_flag = NOT_PRESSED;
-		}
-		itoa(pressed_debounce,Sys_Str,10);
-		taskYIELD();
 
-	}
 }
 
 // ***** Hardware initialization functions *****
@@ -160,6 +145,8 @@ static void prvSetupHardware(void)
 // Button related functions
 static void prvSetupButton(void)
 {
+	// ** Button GPIO Init ad input
+
 	//RCC AHB1 clock init.
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOE, ENABLE);
 	//Define the GPIO struct for configuration
@@ -174,6 +161,28 @@ static void prvSetupButton(void)
 
 	//Initiate the GPIO
 	GPIO_Init(GPIOE,&gpio_key0_pins);
+
+	// ** EXTI init (interruption)
+
+	//1. SYSCFG settings
+
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
+	SYSCFG_EXTILineConfig(GPIOE, EXTI_PinSource4);
+
+	//2. EXTI line config.
+	EXTI_InitTypeDef exti_init;
+
+	exti_init.EXTI_Line = EXTI_Line4;
+	exti_init.EXTI_Mode = EXTI_Mode_Interrupt;
+	exti_init.EXTI_Trigger = EXTI_Trigger_Rising;
+	exti_init.EXTI_LineCmd = ENABLE;
+	EXTI_Init(&exti_init);
+
+	//3. NVIC Settings
+	NVIC_SetPriority(EXTI4_IRQn,5);
+	NVIC_EnableIRQ(EXTI4_IRQn);
+
+
 }
 
 // LED Related functions
