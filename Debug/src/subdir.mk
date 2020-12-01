@@ -4,14 +4,17 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
+../src/hwinit.c \
 ../src/main.c \
 ../src/system_stm32f4xx.c 
 
 OBJS += \
+./src/hwinit.o \
 ./src/main.o \
 ./src/system_stm32f4xx.o 
 
 C_DEPS += \
+./src/hwinit.d \
 ./src/main.d \
 ./src/system_stm32f4xx.d 
 

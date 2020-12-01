@@ -43,7 +43,8 @@ src/main.o: ../src/main.c \
  C:/Ac6/RTOS_Workspace/STM32_LedAndButton/Third-Party/FreeRTOS/org/Source/portable/GCC/ARM_CM4F/portmacro.h \
  C:/Ac6/RTOS_Workspace/STM32_LedAndButton/Third-Party/FreeRTOS/org/Source/include/mpu_wrappers.h \
  C:/Ac6/RTOS_Workspace/STM32_LedAndButton/Third-Party/FreeRTOS/org/Source/include/task.h \
- C:/Ac6/RTOS_Workspace/STM32_LedAndButton/Third-Party/FreeRTOS/org/Source/include/list.h
+ C:/Ac6/RTOS_Workspace/STM32_LedAndButton/Third-Party/FreeRTOS/org/Source/include/list.h \
+ ../src/hwinit.h
 
 C:/Ac6/RTOS_Workspace/STM32_LedAndButton/CMSIS/device/stm32f4xx.h:
 
@@ -134,3 +135,5 @@ C:/Ac6/RTOS_Workspace/STM32_LedAndButton/Third-Party/FreeRTOS/org/Source/include
 C:/Ac6/RTOS_Workspace/STM32_LedAndButton/Third-Party/FreeRTOS/org/Source/include/task.h:
 
 C:/Ac6/RTOS_Workspace/STM32_LedAndButton/Third-Party/FreeRTOS/org/Source/include/list.h:
+
+../src/hwinit.h:
