@@ -35,7 +35,6 @@ char usr_msg[250];
 uint8_t UART_ACCESS_KEY = AVAILABLE;
 uint8_t button_status_flag = NOT_PRESSED;
 char Sys_Str[10];
-static int pressed_debounce=0;
 uint8_t LedSt = 0;
 
 // ****** Functions prototypes ******
@@ -47,6 +46,7 @@ static void prvSetupButton(void);
 static void prvSetupLED(void);
 static void prvSetupUart(void);
 void printmsg(char *msg);
+void rtos_delay(uint32_t delay_in_ms);
 
 #ifdef USE_SEMIHOSTING
 	//Used for semihosting
@@ -63,8 +63,7 @@ int main(void)
 	printf("This is Hello World example code \n");
 #endif
 
-	DWT->CTRL |= (1<<0); //Enable CYCCNT in DWT_CTRL
-
+	DWT->CTRL |= (1<<0); //Enable CYCCNT in DWT_CTRL (Segger SisView)
 
 	//1. Resets the RCC clock config. to the default reset state.
 	//Makes HSI On, PLL Off, HSE Off, system clock = 16MHz, cpu_clock = 16MHz.
@@ -82,8 +81,8 @@ int main(void)
 	printmsg(usr_msg);
 
 	//3. Create 2 tasks
-	xTaskCreate(LED_TASK_handler,"LED-TASK",configMINIMAL_STACK_SIZE,NULL,2,NULL);
-	xTaskCreate(BUTTON_TASK_handler,"BUTTON-TASK",configMINIMAL_STACK_SIZE,NULL,2,NULL);
+	xTaskCreate(LED_TASK_handler,"LED-TASK",500,NULL,2,&xTaskHandle1);
+	xTaskCreate(BUTTON_TASK_handler,"BUTTON-TASK",500,NULL,2,&xTaskHandle2);
 
 	//4. Start the scheduler
 	vTaskStartScheduler();
@@ -91,40 +90,20 @@ int main(void)
 	for(;;);
 }
 
-//Task Handlers
-
+// ***** Task Handlers *****
 void LED_TASK_handler(void *params) //LED management task
 {
+	uint32_t button_notification_val = 0;
 	while(1)
 	{
-		if(button_status_flag == PRESSED)
+
+
+		if(xTaskNotifyWait(0x0,0x0,&button_notification_val,0xFFFFFFFF) == pdTRUE) //Task should wait until notification is received
 		{
-			GPIO_WriteBit(GPIOF,GPIO_Pin_9,Bit_SET);
-			LedSt = GPIO_ReadOutputDataBit(GPIOF,GPIO_Pin_9);
-			if(LedSt == 1 )
-			{
-				printmsg(strcat("\n\r -> Pressed - LED ONE ",Sys_Str));
-			}
-			else
-			{
-				printmsg(strcat("\n\r -> Pressed - LED ZERO ",Sys_Str));
-			}
+			GPIO_ToggleBits(GPIOF,GPIO_Pin_9);
+			sprintf(usr_msg,"\n\r ------->>> Notification is received - %ld",button_notification_val);
+			printmsg(usr_msg);
 		}
-		else
-		{
-			GPIO_WriteBit(GPIOF,GPIO_Pin_9,Bit_RESET);
-			LedSt = GPIO_ReadOutputDataBit(GPIOF,GPIO_Pin_9);
-			if(LedSt == 1 )
-			{
-				printmsg(strcat("\n\r -> Not Pressed - LED ONE ",Sys_Str));
-			}
-			else
-			{
-				printmsg(strcat("\n\r -> Not Pressed - LED ZERO ",Sys_Str));
-			}
-		}
-		LedSt = GPIO_ReadOutputDataBit(GPIOF,GPIO_PinSource9);
-		taskYIELD();
 	}
 }
 
@@ -132,20 +111,13 @@ void BUTTON_TASK_handler(void *params) //Button pooling task
 {
 	while(1)
 	{
-		//If button Key0 is pressed, the pin is grounded, so equals 0
+		//If button Key0 is pressed, the pin is grounded, so equals ZERO
 		if(!GPIO_ReadInputDataBit(GPIOE,GPIO_Pin_4))
 		{
-			if (pressed_debounce < 20) pressed_debounce++;
-			if(pressed_debounce == 20) button_status_flag = PRESSED;
+			rtos_delay(1000);
+			printmsg("\n\r --->> Button pressed ");
+			xTaskNotify(xTaskHandle1,0x1,eIncrement);
 		}
-		else
-		{
-			if (pressed_debounce > 0) pressed_debounce--;
-			if(pressed_debounce == 0) button_status_flag = NOT_PRESSED;
-		}
-		itoa(pressed_debounce,Sys_Str,10);
-		taskYIELD();
-
 	}
 }
 
@@ -243,3 +215,9 @@ void printmsg(char *msg)
 
 }
 
+void rtos_delay(uint32_t delay_in_ms)
+{
+	uint32_t current_tick_count = xTaskGetTickCount();
+	uint32_t delay_in_ticks = configTICK_RATE_HZ * (delay_in_ms/1000);
+	while(xTaskGetTickCount() < (current_tick_count + delay_in_ticks));
+}
