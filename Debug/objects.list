@@ -54,6 +54,7 @@
 "Third-Party/SEGGER/OS/SEGGER_SYSVIEW_FreeRTOS.o"
 "Third-Party/SEGGER/SEGGER/SEGGER_RTT.o"
 "Third-Party/SEGGER/SEGGER/SEGGER_SYSVIEW.o"
+"src/hwinit.o"
 "src/main.o"
 "src/system_stm32f4xx.o"
 "startup/startup_stm32.o"

@@ -485,7 +485,6 @@ void xPortPendSVHandler( void )
 }
 /*-----------------------------------------------------------*/
 
-extern int SysTick_Counter_Interruptions;
 
 void xPortSysTickHandler( void )
 {
@@ -499,7 +498,6 @@ void xPortSysTickHandler( void )
 		/* Increment the RTOS tick. */
 		if( xTaskIncrementTick() != pdFALSE )
 		{
-			SysTick_Counter_Interruptions++; //MatheusAdded
 			traceISR_EXIT_TO_SCHEDULER();
 			/* A context switch is required.  Context switching is performed in
 			the PendSV interrupt.  Pend the PendSV interrupt. */
