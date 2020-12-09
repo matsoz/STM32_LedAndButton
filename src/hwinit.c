@@ -96,6 +96,11 @@ void prvSetupUart(void)
 	uart2_init.USART_WordLength = USART_WordLength_8b;
 	USART_Init(USART2,&uart2_init);
 
+	//4.1 Enable UART byte - reception interrupt
+	USART_ITConfig(USART2,USART_IT_RXNE,ENABLE);
+	NVIC_SetPriority(USART2_IRQn,5);
+	NVIC_EnableIRQ(USART2_IRQn);
+
 	//5. Enable UART Periph.
 	USART_Cmd(USART2,ENABLE);
 }

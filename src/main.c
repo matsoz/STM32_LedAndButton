@@ -37,6 +37,19 @@ TaskHandle_t xTaskHandle4 = NULL;
 QueueHandle_t xQueueHandle1 = NULL;
 QueueHandle_t xQueueHandle2 = NULL;
 
+uint8_t command_buffer[20];
+uint8_t command_len = 0;
+
+char menu[]={"\
+\r\nLED ON                ---> 1 \
+\r\nLED OFF               ---> 2 \
+\r\nLED TOGGLE            ---> 3 \
+\r\nLED TOGGLE OFF        ---> 4 \
+\r\nLED READ STATUS       ---> 5 \
+\r\nRTC PRINT DATETIME    ---> 6 \
+\r\nEXIT APP              ---> 7 \
+\r\nType below:"};
+
 char usr_msg[250];
 
 uint8_t UART_ACCESS_KEY = AVAILABLE;
@@ -87,7 +100,7 @@ int main(void)
 	SEGGER_SYSVIEW_Conf();
 	SEGGER_SYSVIEW_Start();
 
-	sprintf(usr_msg, "This is Queue app. starting \r\n");
+	sprintf(usr_msg, "This is Queue Multitasking app. starting \r\n");
 	printmsg(usr_msg);
 
 	//3. Create 4 tasks + 2 queue
@@ -117,9 +130,11 @@ int main(void)
 // ***** Task Handlers *****
 void Task1_MenuDisplay_Handler(void *params) // Task 1
 {
+	char *pData = menu;
 	while(1)
 	{
-
+		xQueueSend(xQueueHandle2,&pData,portMAX_DELAY); //Relying on queue's size
+		xTaskNotifyWait(0,0,NULL,portMAX_DELAY);
 	}
 }
 
@@ -141,10 +156,27 @@ void Task3_CmdProc_Handler(void *params) // Task 3
 
 void Task4_UARTwrite_Handler(void *params) // Task 4
 {
+	char pData = NULL;
 	while(1)
 	{
-
+		xQueueReceive(xQueueHandle2,&pData,portMAX_DELAY);
+		printmsg(pData);
 	}
 }
 
+void USART2_IRQHandler(void)
+{
+	uint16_t data_byte;
 
+	if(USART_GetFlagStatus(USART2,USART_FLAG_RXNE)) //data received from user
+	{
+		data_byte = USART_ReceiveData(USART2);
+		command_buffer[command_len++]= data_byte & 0xFF;
+		if(data_byte == '\r') //finished entering data
+		{
+			//notify command handling task
+			xTaskNotifyFromISR(xTaskHandle2,0,eNoAction,NULL);
+		}
+	}
+
+}
