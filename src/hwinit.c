@@ -94,23 +94,30 @@ void prvSetupUart(void)
 	uart2_init.USART_Parity = USART_Parity_No;
 	uart2_init.USART_StopBits = USART_StopBits_1;
 	uart2_init.USART_WordLength = USART_WordLength_8b;
-	USART_Init(USART2,&uart2_init);
 
 	//4.1 Enable UART byte - reception interrupt
+
 	USART_ITConfig(USART2,USART_IT_RXNE,ENABLE);
-	NVIC_SetPriority(USART2_IRQn,5);
-	NVIC_EnableIRQ(USART2_IRQn);
+	NVIC_InitTypeDef usart_nvic;
+	usart_nvic.NVIC_IRQChannel = USART2_IRQn;
+	usart_nvic.NVIC_IRQChannelCmd = ENABLE;
+	usart_nvic.NVIC_IRQChannelSubPriority = 0;
+	usart_nvic.NVIC_IRQChannelPreemptionPriority = 0;
+	NVIC_Init(&usart_nvic);
+	NVIC_SetPriority(USART2_IRQn,configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY + 1); //One level above the max. allowed
+
+
+	USART_Init(USART2,&uart2_init);
 
 	//5. Enable UART Periph.
 	USART_Cmd(USART2,ENABLE);
 }
 
-void printmsg(char *msg)
+void printmsg(char* msg)
 {
 	for(uint32_t i=0; i<strlen(msg) ; i++)
 	{
 		while (USART_GetFlagStatus(USART2, USART_FLAG_TXE) != SET) ;
 		USART_SendData(USART2, msg[i]);
 	}
-
 }

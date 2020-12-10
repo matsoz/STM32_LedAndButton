@@ -40,6 +40,9 @@ QueueHandle_t xQueueHandle2 = NULL;
 uint8_t command_buffer[20];
 uint8_t command_len = 0;
 
+char userfdbck[]={"\
+\r\nGotten! "};
+
 char menu[]={"\
 \r\nLED ON                ---> 1 \
 \r\nLED OFF               ---> 2 \
@@ -58,6 +61,14 @@ char Sys_Str[10];
 uint8_t LedSt = 0;
 
 // ****** Datatypes / Struct deginitions ******
+#define LED_ON_COMMAND 1
+#define LED_OFF_COMMAND 2
+#define LED_TOGGLE_ON 3
+#define LED_TOGGLE_OFF 4
+#define LED_READ_STATUS 5
+#define RTC_PRINT 6
+#define EXIT_APP 7
+
 typedef struct APP_CMD
 {
 	uint8_t COMMAND_NUM;
@@ -69,6 +80,8 @@ void Task1_MenuDisplay_Handler(void *params);
 void Task2_CmdHandling_Handler(void *params);
 void Task3_CmdProc_Handler(void *params);
 void Task4_UARTwrite_Handler(void *params);
+uint8_t getCommandCode(uint8_t *buffer);
+void getArguments(uint8_t *buffer);
 
 
 #ifdef USE_SEMIHOSTING
@@ -140,23 +153,58 @@ void Task1_MenuDisplay_Handler(void *params) // Task 1
 
 void Task2_CmdHandling_Handler(void *params) // Task 2
 {
+	uint8_t command_code = 0;
+	APP_CMD_t *new_cmd;
+
 	while(1)
 	{
-
+		//Send Cmd to queue
+		command_code = getCommandCode(command_buffer); // Critical sector, global data access
+		new_cmd = (APP_CMD_t*) pvPortMalloc(sizeof(APP_CMD_t));
+		new_cmd->COMMAND_NUM = command_code;
+		getArguments(new_cmd->COMMAND_ARGS);
+		xQueueSend(xQueueHandle1,&new_cmd,portMAX_DELAY);
+		xTaskNotifyWait(0,0,NULL,portMAX_DELAY);
 	}
 }
 
+
 void Task3_CmdProc_Handler(void *params) // Task 3
 {
+	APP_CMD_t *new_cmd;
+
 	while(1)
 	{
-
+			xQueueReceive(xQueueHandle1,(void*)&new_cmd,portMAX_DELAY);
+			if(new_cmd->COMMAND_NUM == LED_ON_COMMAND)
+			{
+				GPIO_WriteBit(GPIOF,GPIO_Pin_9,Bit_RESET);
+			}
+			else if(new_cmd->COMMAND_NUM == LED_OFF_COMMAND)
+			{
+				GPIO_WriteBit(GPIOF,GPIO_Pin_9,Bit_SET);
+			}
+			else if(new_cmd->COMMAND_NUM == LED_TOGGLE_ON)
+			{
+			}
+			else if(new_cmd->COMMAND_NUM == LED_TOGGLE_OFF)
+			{
+			}
+			else if(new_cmd->COMMAND_NUM == LED_READ_STATUS)
+			{
+			}
+			else if(new_cmd->COMMAND_NUM == RTC_PRINT)
+			{
+			}
+			else if(new_cmd->COMMAND_NUM == EXIT_APP)
+			{
+			}
 	}
 }
 
 void Task4_UARTwrite_Handler(void *params) // Task 4
 {
-	char pData = NULL;
+	char *pData = NULL;
 	while(1)
 	{
 		xQueueReceive(xQueueHandle2,&pData,portMAX_DELAY);
@@ -164,19 +212,34 @@ void Task4_UARTwrite_Handler(void *params) // Task 4
 	}
 }
 
-void USART2_IRQHandler(void)
+void USART2_IRQHandler()
 {
 	uint16_t data_byte;
+	//char *pData = userfdbck;
+	BaseType_t *xHigherPriTask = pdTRUE;
 
 	if(USART_GetFlagStatus(USART2,USART_FLAG_RXNE)) //data received from user
 	{
 		data_byte = USART_ReceiveData(USART2);
 		command_buffer[command_len++]= data_byte & 0xFF;
-		if(data_byte == '\r') //finished entering data
+		if(data_byte == 13) //finished entering data
 		{
-			//notify command handling task
-			xTaskNotifyFromISR(xTaskHandle2,0,eNoAction,NULL);
+			command_len=0;
+			//xQueueSend(xQueueHandle2,&pData,portMAX_DELAY); //Send user feedback
+			xTaskNotifyFromISR(xTaskHandle2,0,eNoAction,NULL); 	//notify command handling task
+			xTaskNotifyFromISR(xTaskHandle1,0,eNoAction,NULL); 	//notify menu display task
+
 		}
 	}
+
+}
+
+uint8_t getCommandCode(uint8_t *buffer)
+{
+	return buffer[0]-48;
+}
+
+void getArguments(uint8_t *buffer)
+{
 
 }
