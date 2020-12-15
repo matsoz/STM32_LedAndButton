@@ -14,4 +14,5 @@ void prvSetupHardware(void);
 void prvSetupButton(void);
 void prvSetupLED(void);
 void prvSetupUart(void);
+void prvSetupTimer(void);
 void printmsg(char *msg);

@@ -44,7 +44,7 @@ char userfdbck[]={"\
 \r\nGotten! "};
 
 char menu[]={"\
-\r\nLED ON                ---> 1 \
+\r\n\r\nLED ON                ---> 1 \
 \r\nLED OFF               ---> 2 \
 \r\nLED TOGGLE            ---> 3 \
 \r\nLED TOGGLE OFF        ---> 4 \
@@ -59,6 +59,8 @@ uint8_t UART_ACCESS_KEY = AVAILABLE;
 
 char Sys_Str[10];
 uint8_t LedSt = 0;
+uint8_t ToggleOn = 0;
+uint32_t TaskCnt=0;
 
 // ****** Datatypes / Struct deginitions ******
 #define LED_ON_COMMAND 1
@@ -80,6 +82,7 @@ void Task1_MenuDisplay_Handler(void *params);
 void Task2_CmdHandling_Handler(void *params);
 void Task3_CmdProc_Handler(void *params);
 void Task4_UARTwrite_Handler(void *params);
+void TIM8_TRG_COM_TIM14_IRQHandler();
 uint8_t getCommandCode(uint8_t *buffer);
 void getArguments(uint8_t *buffer);
 
@@ -168,10 +171,10 @@ void Task2_CmdHandling_Handler(void *params) // Task 2
 	}
 }
 
-
 void Task3_CmdProc_Handler(void *params) // Task 3
 {
 	APP_CMD_t *new_cmd;
+
 
 	while(1)
 	{
@@ -186,9 +189,11 @@ void Task3_CmdProc_Handler(void *params) // Task 3
 			}
 			else if(new_cmd->COMMAND_NUM == LED_TOGGLE_ON)
 			{
+				ToggleOn = 1;
 			}
 			else if(new_cmd->COMMAND_NUM == LED_TOGGLE_OFF)
 			{
+				ToggleOn = 0;
 			}
 			else if(new_cmd->COMMAND_NUM == LED_READ_STATUS)
 			{
@@ -228,10 +233,19 @@ void USART2_IRQHandler()
 			//xQueueSend(xQueueHandle2,&pData,portMAX_DELAY); //Send user feedback
 			xTaskNotifyFromISR(xTaskHandle2,0,eNoAction,NULL); 	//notify command handling task
 			xTaskNotifyFromISR(xTaskHandle1,0,eNoAction,NULL); 	//notify menu display task
-
 		}
 	}
 
+}
+
+void TIM8_TRG_COM_TIM14_IRQHandler()
+{
+	TaskCnt = TIM_GetCounter(TIM14);
+	TIM_ClearITPendingBit(TIM14,TIM_IT_Update);
+	if(ToggleOn == 1)
+	{
+		GPIO_ToggleBits(GPIOF,GPIO_Pin_9);
+	}
 }
 
 uint8_t getCommandCode(uint8_t *buffer)

@@ -22,6 +22,7 @@ void prvSetupHardware(void)
 	prvSetupButton(); //KEY0 Init. from GPIO E
 	prvSetupLED(); //LED0 Init. from GPIO F
 	prvSetupUart(); //UART Init.
+	prvSetupTimer(); //Timer init
 }
 
 // Button related functions
@@ -111,6 +112,26 @@ void prvSetupUart(void)
 
 	//5. Enable UART Periph.
 	USART_Cmd(USART2,ENABLE);
+}
+
+void prvSetupTimer(void)
+{
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM14,ENABLE);
+
+	TIM_TimeBaseInitTypeDef TimeBase;
+	TimeBase.TIM_ClockDivision = TIM_CKD_DIV4;
+	TimeBase.TIM_CounterMode = TIM_CounterMode_Up;
+	TimeBase.TIM_Period = 500; //Counts down from
+	TimeBase.TIM_Prescaler = 40000; //Ticks
+	TimeBase.TIM_RepetitionCounter = 0;
+	TIM_TimeBaseInit(TIM14,&TimeBase);
+
+
+	NVIC_EnableIRQ(TIM8_TRG_COM_TIM14_IRQn);
+	NVIC_SetPriority(TIM8_TRG_COM_TIM14_IRQn,configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY + 20); //One level above the max. allowed
+	TIM_ITConfig(TIM14,TIM_IT_Update,ENABLE);
+
+	TIM_Cmd(TIM14,ENABLE);
 }
 
 void printmsg(char* msg)
